@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>在线问卷</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    h1 {
+      text-align: center;
+    }
+    .quota {
+      display: flex;
+      justify-content: space-around;
+      margin-bottom: 20px;
+    }
+    .quota-item {
+      font-size: 14px;
+      font-weight: bold;
+      text-align: center;
+      padding: 10px;
+      border-radius: 5px;
+    }
+    .quota-item[data-level="1"] { background-color: #ffcccc; }
+    .quota-item[data-level="2"] { background-color: #ffe0cc; }
+    .quota-item[data-level="3"] { background-color: #ffffcc; }
+    .quota-item[data-level="4"] { background-color: #ccffcc; }
+    .quota-item[data-level="5"] { background-color: #cce5ff; }
+    .quota-item[data-level="6"] { background-color: #d9ccff; }
+    .quota-item[data-level="7"] { background-color: #f5ccff; }
+    .question {
+      margin-bottom: 15px;
+    }
+    .question label {
+      display: block;
+      margin-bottom: 5px;
+    }
+    select {
+      width: 100%;
+      padding: 5px;
+      font-size: 14px;
+    }
+    #error {
+      color: red;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>在线问卷</h1>
+  <div id="quota-container" class="quota">
+    <div class="quota-item" data-level="1">等级 1 剩余: <span id="quota-1">2</span></div>
+    <div class="quota-item" data-level="2">等级 2 剩余: <span id="quota-2">3</span></div>
+    <div class="quota-item" data-level="3">等级 3 剩余: <span id="quota-3">4</span></div>
+    <div class="quota-item" data-level="4">等级 4 剩余: <span id="quota-4">6</span></div>
+    <div class="quota-item" data-level="5">等级 5 剩余: <span id="quota-5">4</span></div>
+    <div class="quota-item" data-level="6">等级 6 剩余: <span id="quota-6">3</span></div>
+    <div class="quota-item" data-level="7">等级 7 剩余: <span id="quota-7">2</span></div>
+  </div>
+  <form id="questionnaire">
+    <div id="error"></div>
+    <!-- Dynamically generate 24 questions -->
+    <div id="questions-container"></div>
+    <button type="submit">提交问卷</button>
+  </form>
+
+  <script>
+    // 配额设置
+    const quotas = { 1: 2, 2: 3, 3: 4, 4: 6, 5: 4, 6: 3, 7: 2 };
+    const currentSelections = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0 };
+    const maxQuestions = 24;
+    const questionsContainer = document.getElementById("questions-container");
+
+    // 初始化问题
+    for (let i = 1; i <= maxQuestions; i++) {
+      const questionDiv = document.createElement("div");
+      questionDiv.className = "question";
+      questionDiv.innerHTML = `
+        <label for="question-${i}">第 ${i} 题:</label>
+        <select id="question-${i}" data-question="${i}">
+          <option value="">请选择等级</option>
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+          <option value="6">6</option>
+          <option value="7">7</option>
+        </select>
+      `;
+      questionsContainer.appendChild(questionDiv);
+    }
+
+    // 实时更新剩余配额
+    document.getElementById("questionnaire").addEventListener("change", (event) => {
+      if (event.target.tagName === "SELECT" && event.target.dataset.question) {
+        const questionId = event.target.dataset.question;
+        const previousValue = event.target.dataset.previousValue;
+        const newValue = event.target.value;
+
+        // 更新之前的选择值
+        if (previousValue) {
+          currentSelections[previousValue]--;
+        }
+        if (newValue) {
+          currentSelections[newValue]++;
+        }
+
+        // 检查是否超出限制
+        if (newValue && currentSelections[newValue] > quotas[newValue]) {
+          // 超出限制，提示用户并清空选择
+          document.getElementById("error").textContent = `等级 ${newValue} 超出限制，请选择其他等级！`;
+          event.target.value = "";
+          currentSelections[newValue]--;
+        } else {
+          document.getElementById("error").textContent = "";
+          event.target.dataset.previousValue = newValue;
+        }
+
+        // 更新配额显示
+        updateQuotaDisplay();
+      }
+    });
+
+    // 更新配额显示
+    function updateQuotaDisplay() {
+      Object.keys(quotas).forEach((level) => {
+        document.getElementById(`quota-${level}`).textContent =
+          quotas[level] - currentSelections[level];
+      });
+    }
+  </script>
+</body>
+</html>
